@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: krishnachavan01/gitops-simulator-app:v1.0.0   # AUTO-UPDATED BY PIPELINE
+          image: krishnachavan01/gitops-simulator-app:v1.0.0
           ports:
             - containerPort: 8080
           env:
