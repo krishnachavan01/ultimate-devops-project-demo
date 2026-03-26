@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-simulator-app
+  namespace: staging
+  labels:
+    env: staging
+    managed-by: gitops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gitops-simulator-app
+  template:
+    metadata:
+      labels:
+        app: gitops-simulator-app
+        env: staging
+    spec:
+      containers:
+        - name: app
+          image: krishnachavan01/gitops-simulator-app:v1.0.0   # AUTO-UPDATED BY PIPELINE
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENV
+              value: "staging"

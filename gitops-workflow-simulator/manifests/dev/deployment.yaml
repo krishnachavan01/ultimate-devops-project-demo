@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-simulator-app
+  namespace: dev
+  labels:
+    env: dev
+    managed-by: gitops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitops-simulator-app
+  template:
+    metadata:
+      labels:
+        app: gitops-simulator-app
+        env: dev
+    spec:
+      containers:
+        - name: app
+          image: krishnachavan01/gitops-simulator-app:v1.0.0   # AUTO-UPDATED BY PIPELINE
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENV
+              value: "dev"

@@ -1,0 +1,111 @@
+name: GitOps Workflow Simulator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'gitops-workflow-simulator/app/version.txt'
+
+jobs:
+  gitops-deploy:
+    name: GitOps — Auto Update Manifests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # Needed to commit manifest updates back to repo
+
+    steps:
+      # ── 1. Checkout the repository ────────────────────────────────────
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Read the new app version ───────────────────────────────────
+      - name: Read App Version
+        id: read_version
+        run: |
+          VERSION=$(cat gitops-workflow-simulator/app/version.txt | tr -d '[:space:]')
+          echo "New version detected: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # ── 3. Print GitOps pipeline header ──────────────────────────────
+      - name: GitOps Pipeline Started
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  🚀 GitOps Workflow Simulator"
+          echo "  Author : Krishna Chavan"
+          echo "  Version: ${{ steps.read_version.outputs.version }}"
+          echo "  Trigger: push to main (app/version.txt changed)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # ── 4. Simulate Docker build & push ──────────────────────────────
+      - name: Simulate Docker Build & Push
+        run: |
+          VERSION="${{ steps.read_version.outputs.version }}"
+          echo "🐳 Building image: krishnachavan01/gitops-simulator-app:$VERSION"
+          echo "📋 Running tests... PASSED ✅"
+          echo "📤 Simulating push to Docker Hub... DONE ✅"
+          echo "(In a real pipeline, docker build and docker push would run here)"
+
+      # ── 5. Update DEV manifest (core GitOps pattern with sed) ─────────
+      - name: Update DEV Manifest
+        run: |
+          VERSION="${{ steps.read_version.outputs.version }}"
+          MANIFEST="gitops-workflow-simulator/manifests/dev/deployment.yaml"
+          echo "🔄 Updating DEV manifest with image tag: $VERSION"
+          sed -i "s|image: krishnachavan01/gitops-simulator-app:.*|image: krishnachavan01/gitops-simulator-app:${VERSION}|g" "$MANIFEST"
+          echo "✅ DEV manifest updated:"
+          grep "image:" "$MANIFEST"
+
+      # ── 6. Update STAGING manifest ────────────────────────────────────
+      - name: Update STAGING Manifest
+        run: |
+          VERSION="${{ steps.read_version.outputs.version }}"
+          MANIFEST="gitops-workflow-simulator/manifests/staging/deployment.yaml"
+          echo "🔄 Updating STAGING manifest with image tag: $VERSION"
+          sed -i "s|image: krishnachavan01/gitops-simulator-app:.*|image: krishnachavan01/gitops-simulator-app:${VERSION}|g" "$MANIFEST"
+          echo "✅ STAGING manifest updated:"
+          grep "image:" "$MANIFEST"
+
+      # ── 7. Simulate reconciliation ────────────────────────────────────
+      - name: Simulate kubectl apply (Reconciliation)
+        run: |
+          echo ""
+          echo "🌍 Reconciling DEV environment..."
+          echo "   kubectl apply -f manifests/dev/deployment.yaml"
+          echo "   → deployment.apps/gitops-simulator-app configured ✅"
+          echo ""
+          echo "🌍 Reconciling STAGING environment..."
+          echo "   kubectl apply -f manifests/staging/deployment.yaml"
+          echo "   → deployment.apps/gitops-simulator-app configured ✅"
+          echo ""
+          echo "🔒 PROD requires manual promotion by Team Lead (best practice)"
+
+      # ── 8. Commit the updated manifests back to the repo (GitOps!) ────
+      - name: Commit Manifest Updates
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gitops-workflow-simulator/manifests/dev/deployment.yaml
+          git add gitops-workflow-simulator/manifests/staging/deployment.yaml
+          git diff --staged --quiet || git commit -m "gitops: auto-update manifests to ${{ steps.read_version.outputs.version }} [skip ci]"
+          git push
+
+      # ── 9. Print deployment summary ───────────────────────────────────
+      - name: Deployment Summary
+        run: |
+          VERSION="${{ steps.read_version.outputs.version }}"
+          echo ""
+          echo "╔══════════════════════════════════════════════════╗"
+          echo "║          🎉 GitOps Deployment Complete           ║"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║  Version : $VERSION                              "
+          echo "║  DEV     : Deployed ✅                           ║"
+          echo "║  STAGING : Deployed ✅                           ║"
+          echo "║  PROD    : Pending manual promotion 🔒           ║"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║  To rollback: git revert HEAD && git push        ║"
+          echo "║  To promote to PROD: update prod manifest        ║"
+          echo "╚══════════════════════════════════════════════════╝"

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-simulator-app
+  namespace: prod
+  labels:
+    env: prod
+    managed-by: gitops
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gitops-simulator-app
+  template:
+    metadata:
+      labels:
+        app: gitops-simulator-app
+        env: prod
+    spec:
+      containers:
+        - name: app
+          image: krishnachavan01/gitops-simulator-app:v1.0.0   # MANUALLY PROMOTED BY TEAM LEAD
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENV
+              value: "prod"
